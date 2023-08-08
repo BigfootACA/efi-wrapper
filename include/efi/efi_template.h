@@ -1,0 +1,8 @@
+#ifndef EFI_WRAPPER_EFI_TEMPLATE_H
+#define EFI_WRAPPER_EFI_TEMPLATE_H
+#include"efi_spec.h"
+extern const efi_system_table efi_system_table_template;
+extern const efi_boot_services efi_boot_services_template;
+extern const efi_dxe_services efi_dxe_services_template;
+extern const efi_runtime_services efi_runtime_services_template;
+#endif //EFI_WRAPPER_EFI_TEMPLATE_H

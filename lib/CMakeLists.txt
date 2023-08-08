@@ -1,0 +1,15 @@
+add_library(
+	global_lib
+	STATIC
+	mem.c
+	logger.c
+)
+add_subdirectory(efi)
+add_subdirectory(general)
+add_subdirectory(linux)
+target_link_libraries(
+	global_lib
+	global_lib_efi
+	global_lib_general
+	global_lib_linux
+)

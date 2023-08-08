@@ -1,0 +1,13 @@
+add_library(
+	efi_wrapper_loader
+	STATIC
+	parser.c
+	string.c
+	pe.c
+	file.c
+	loader.c
+	print.c
+	execute.c
+	symbol.c
+	crash.c
+	running.c image.c)

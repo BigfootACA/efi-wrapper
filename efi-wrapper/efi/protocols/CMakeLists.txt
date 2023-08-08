@@ -1,0 +1,22 @@
+add_library(
+	efi_wrapper_efi_protocols
+	STATIC
+	timestamp.c
+	unicode_collation.c
+	simple_text/posix-fd.c
+	simple_text/escape.c
+	graphics_output/modes.c
+	graphics_output/gop.c
+	graphics_output/fb.c
+	graphics_output/memory.c
+	graphics_output/sdl2.c
+	graphics_output/vnc.c
+	simple_file_system/posix-fd.c
+	simple_file_system/utils.c
+	device_path/utils.c
+	hii/cfg_routing.c
+	hii/database.c
+	hii/string.c
+	hii/image.c
+	hii/font.c
+)

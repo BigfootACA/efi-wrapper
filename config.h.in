@@ -1,0 +1,4 @@
+#cmakedefine SDL2_FOUND 1
+#cmakedefine ELF_FOUND 1
+#cmakedefine DWFL_FOUND 1
+#cmakedefine VNCSERVER_FOUND 1

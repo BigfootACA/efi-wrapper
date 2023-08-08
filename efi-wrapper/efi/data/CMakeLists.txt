@@ -1,0 +1,10 @@
+add_library(
+	efi_wrapper_efi_data
+	STATIC
+	hob_data.c
+	mem_type.c
+	system_table.c
+	dxe_services.c
+	boot_services.c
+	runtime_services.c
+)

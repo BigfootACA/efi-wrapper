@@ -1,0 +1,9 @@
+add_library(
+	global_lib_efi
+	STATIC
+	char16.c
+	device_path.c
+	guid.c
+	string.c
+	utils.c
+)

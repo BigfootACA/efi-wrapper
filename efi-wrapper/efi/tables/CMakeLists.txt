@@ -1,0 +1,16 @@
+add_library(
+	efi_wrapper_efi_tables
+	STATIC
+	dxe.c
+	time.c
+	address.c
+	variable.c
+	capsule.c
+	memory.c
+	protocol.c
+	image.c
+	event.c
+	handles.c
+	controller.c
+	configuration.c
+)
