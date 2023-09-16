@@ -48,14 +48,13 @@ efi_status efi_update_size(
 	if(info->buffer&&new_size==info->size)buf=info->buffer;
 	else if(!buffer){
 		if(info->buffer&&!info->reallocate)return efi_unsupported;
-		buf=info->buffer?
-			mem_reallocate(info->buffer,new_size):
-			mem_allocate(efi_current_ctx->mem[efi_bs_data].pool,new_size);
-		if(!buf)return efi_out_of_resources;
-		if(new_size>info->size)memset(
-			buf+info->size,0,
-			new_size-info->size
+		buf=mmap(
+			NULL,new_size,PROT_READ|PROT_WRITE,
+			MAP_PRIVATE|MAP_32BIT|MAP_ANONYMOUS,-1,0
 		);
+		if(!buf||buf==MAP_FAILED)return efi_out_of_resources;
+		if(info->buffer)munmap(info->buffer,info->size);
+		memset(buf,0,info->size);
 	}else buf=buffer;
 	if(
 		!oi||buf!=info->buffer||
