@@ -115,15 +115,43 @@ static efiapi efi_status sdl2_gop_set_mode(
 	if(!efi_current_ctx)log_return(efi_not_ready);
 	if(!proto||num>=efi_gop_mode.max_mode)
 		log_return(efi_invalid_parameter);
-	if(efi_guid_equals(&p->data.magic,&gEfiWrapperSDL2GraphicsOutputProtocolGuid))
+	if(!efi_guid_equals(&p->data.magic,&gEfiWrapperSDL2GraphicsOutputProtocolGuid))
 		log_return(efi_invalid_parameter);
 	if(!p->data.reallocate)log_return(efi_unsupported);
 	pthread_mutex_lock(&p->fb_lock);
 	mode=&efi_gop_modes[num];
 	st=efi_update_size(&p->data,mode,p->data.cur,NULL);
-	if(!efi_error(st))p->data.mode.mode=num,p->data.cur=mode;
+	if(!efi_error(st)){
+		p->data.mode.mode=num;
+		p->data.mode.info=mode;
+		p->data.cur=mode;
+	}
 	p->in.simple.mode.res_x=p->data.cur->width;
 	p->in.simple.mode.res_y=p->data.cur->height;
+	SDL_SetRenderTarget(p->renderer,NULL);
+	SDL_SetWindowSize(
+		p->window,
+		p->data.cur->width,
+		p->data.cur->height
+	);
+	p->texture=SDL_CreateTexture(
+		p->renderer,
+		SDL_PIXELFORMAT_XBGR8888,
+		SDL_TEXTUREACCESS_STATIC,
+		p->data.cur->width,
+		p->data.cur->height
+	);
+	SDL_SetRenderTarget(p->renderer,p->texture);
+	SDL_SetTextureBlendMode(
+		p->texture,
+		SDL_BLENDMODE_BLEND
+	);
+	if(!p->show){
+		p->show=true;
+		SDL_ShowWindow(p->window);
+		SDL_RaiseWindow(p->window);
+		SDL_StartTextInput();
+	}
 	pthread_mutex_unlock(&p->fb_lock);
 	log_return(st);
 }
@@ -515,12 +543,15 @@ static const efi_simple_text_input_ex_protocol simple_text_input_ex_protocol={
 
 static _Noreturn void*update_thread(void*d){
 	struct timespec ts;
+	bool update;
 	SDL_Event event;
 	efi_graphics_output_protocol_private_sdl2*p=d;
 	while(true){
 		ts.tv_sec=0,ts.tv_nsec=20000000;
 		errno=0;
-		if(sem_timedwait(&p->update,&ts)==0){
+		update=sem_timedwait(&p->update,&ts)==0;
+		if(efi_current_ctx&&!efi_current_ctx->timer)update=true;
+		if(update){
 			pthread_mutex_lock(&p->fb_lock);
 			SDL_UpdateTexture(
 				p->texture,NULL,p->data.buffer,
