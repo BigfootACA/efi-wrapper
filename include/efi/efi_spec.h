@@ -5,6 +5,7 @@
 #ifndef EFI_WRAPPER_EFI_SPEC_H
 #define EFI_WRAPPER_EFI_SPEC_H
 #include<string.h>
+#include<sys/time.h>
 #include"efi_types.h"
 #include"efi_status.h"
 #include"dxe_services.h"
