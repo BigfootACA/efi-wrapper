@@ -31,7 +31,7 @@ static void tlsf_mem_free(mem_pool*pool,void*ptr){
 }
 
 static efi_status init_pool(
-	mem_pool*parent,
+	mem_pool*parent cdecl_attr_unused,
 	efi_run_context*ctx,
 	efi_memory_type type,
 	size_t length
@@ -47,10 +47,15 @@ static efi_status init_pool(
 		xerror("create memory pool failed");
 		EDONE(st=efi_out_of_resources);
 	}
-	if(!(mem->pointer=mem_aligned_allocate(
-		parent,PAGE_SIZE,mem->size
-	))){
-		xerror("allocate memory region failed");
+	if(!(mem->pointer=mmap(
+		NULL,mem->size,
+		PROT_READ|PROT_WRITE|PROT_EXEC,
+		MAP_PRIVATE|MAP_32BIT|MAP_ANONYMOUS,-1,0
+	))||mem->pointer==MAP_FAILED){
+		xerror(
+			"allocate %zu bytes memory region failed: %s",
+			mem->size,strerror(errno)
+		);
 		EDONE(st=efi_out_of_resources);
 	}
 	if(!(mem->tlsf_ctl=tlsf_create(mem->pointer))){
@@ -88,7 +93,7 @@ static efi_status init_pool(
 	done:
 	if(mem->tlsf_pool)tlsf_remove_pool(mem->tlsf_ctl,mem->tlsf_pool);
 	if(mem->tlsf_ctl)tlsf_destroy(mem->tlsf_ctl);
-	if(mem->pointer)mem_free(mem->pointer);
+	if(mem->pointer)munmap(mem->pointer,mem->size);
 	return st;
 }
 
