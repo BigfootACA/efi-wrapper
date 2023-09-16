@@ -104,6 +104,7 @@ void signal_hand(int sig,siginfo_t*info,void*d){
 		_exit(-1);
 	}
 	restore_terminal();
+	log_call_level=0;
 	xerror("****************************************");
 	xerror("Catch fatal exception %s",strsignal(sig));
 	xerror("Signal: %d",info->si_errno);
