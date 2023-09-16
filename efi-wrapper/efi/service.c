@@ -34,6 +34,12 @@ static bool svc_ins_is_guid(const efi_service_instance*ins,const efi_guid*g){
 	return svc_is_guid(ins->service,g);
 }
 
+static bool svc_cfg_is_name(const efi_service_cfg*cfg,const char*name){
+	if(!svc_cfg_valid(cfg)||!name)return false;
+	if(strlen(name)>=sizeof(cfg->name))return false;
+	return strcmp(cfg->name,name)==0;
+}
+
 static bool svc_cmp(const efi_service*svc1,const efi_service*svc2){
 	if(!svc_valid(svc1)||!svc_valid(svc2))return false;
 	if(svc1==svc2)return true;
@@ -60,6 +66,7 @@ static bool svc_ins_cmp(const efi_service_instance*ins1,const efi_service_instan
 
 static bool lst_svc_cmp(list*l,void*d){return svc_cmp(LIST_DATA(l,efi_service*),d);}
 static bool lst_svc_cfg_cmp(list*l,void*d){return svc_cfg_cmp(LIST_DATA(l,efi_service_cfg*),d);}
+static bool lst_svc_cfg_name_cmp(list*l,void*d){return svc_cfg_is_name(LIST_DATA(l,efi_service_cfg*),d);}
 static bool lst_svc_ins_cmp(list*l,void*d){return svc_ins_cmp(LIST_DATA(l,efi_service_instance*),d);}
 static bool lst_svc_guid_cmp(list*l,void*d){return svc_is_guid(LIST_DATA(l,efi_service*),d);}
 static bool lst_svc_ins_guid_cmp(list*l,void*d){return svc_ins_is_guid(LIST_DATA(l,efi_service_instance*),d);}
@@ -341,4 +348,20 @@ void efi_service_config_register(const efi_service_cfg*cfg){
 	}
 	return;
 	done:abort();
+}
+
+efi_service_cfg*efi_service_config_lookup(const char*name){
+	list*l=list_search_one(efi_service_cfgs,lst_svc_cfg_name_cmp,(void*)name);
+	return l?LIST_DATA(l,efi_service_cfg*):NULL;
+}
+
+void efi_service_config_unregister(const efi_service_cfg*cfg){
+	if(!cfg)return;
+	list*l=list_search_one(efi_service_cfgs,list_pointer_comparator,(void*)cfg);
+	if(l)list_obj_del(&efi_service_cfgs,l,list_default_free);
+}
+
+void efi_service_config_unregister_by_name(const char*name){
+	efi_service_cfg*cfg=efi_service_config_lookup(name);
+	if(cfg)efi_service_config_unregister(cfg);
 }
