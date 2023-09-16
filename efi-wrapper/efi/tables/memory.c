@@ -18,7 +18,7 @@ efiapi efi_status efi_allocate_pages_impl(
 	if(!memory||pages<=0)log_return(efi_invalid_parameter);
 	if(memory_type>=efi_max_memory_type)log_return(efi_invalid_parameter);
 	if(!efi_current_ctx)log_return(efi_not_ready);
-	if(!(pool=efi_current_ctx->mem[type].pool))log_return(efi_unsupported);
+	if(!(pool=efi_current_ctx->mem[memory_type].pool))log_return(efi_unsupported);
 	memory->ptr=mem_aligned_allocate(pool,PAGE_SIZE,mem);
 	xlog(LOG_CALL,"out memory=%p",memory->ptr);
 	log_return(memory->ptr?efi_success:efi_out_of_resources);
