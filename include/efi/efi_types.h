@@ -219,7 +219,7 @@ typedef struct efi_memory_descriptor{
 #if WORD_SIZE == 8
 static_assert(sizeof(efi_memory_descriptor)==40,"efi memory descriptor size mismatch");
 #elif WORD_SIZE == 4
-static_assert(sizeof(efi_memory_descriptor)==28,"efi memory descriptor size mismatch");
+static_assert(sizeof(efi_memory_descriptor)==32,"efi memory descriptor size mismatch");
 #else
 #error unknown word size
 #endif
