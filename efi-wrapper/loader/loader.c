@@ -88,13 +88,12 @@ static bool efi_relocation(efi_file*file){
 	pe_data_dir*dir;
 	size_t relocs=0;
 	pe_section_header*hdr;
-	switch(file->opt_header.common.magic){
-		case PE32_MAGIC:dir=&file->opt_header.pe32.data_dir[5];break;
-		case PE64_MAGIC:dir=&file->opt_header.pe64.data_dir[5];break;
-		default:return false;
-	}
+	OPT_HDR_GET(file,dir,data_dir,return false)
+	dir=&dir[5];
 	if(dir->size==0)return true;
-	uintn_t image=(uintn_t)file->image;
+	uintn_t base,image=(uintn_t)file->image;
+	OPT_HDR_GET(file,base,image_base,return false)
+	if(base!=0)image-=base;
 	pe_relocation_base*rel=file->image+dir->virt_addr;
 	if(!(hdr=efi_lookup_section(file,dir->virt_addr,NULL))){
 		xerror("relocation address not found in any sections");
