@@ -146,6 +146,8 @@ typedef int16_t char16;
 typedef uint16_t uchar16;
 typedef uintn_t efi_tpl;
 typedef uint64_t efi_lba;
+typedef char*string8;
+typedef unsigned short*string16;
 typedef struct efi_event*efi_event;
 typedef struct efi_handle*efi_handle;
 static_assert(sizeof(wchar_t)==sizeof(char16),"wchar_t not 16-bits");
