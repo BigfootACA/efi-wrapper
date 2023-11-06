@@ -39,9 +39,17 @@ static efi_status add_loaded_image(efi_file*file){
 		}
 	}
 	if(!file->loaded.device_handle){
+		uintn_t size=0;
+		efi_handle*hands=NULL;
 		ins=efi_service_lookup_instance(file->context,&gEfiSimpleFileSystemProtocolGuid);
 		if(ins)device=ins->handle;
-		else xerror("no file system found");
+		if(!ins)file->context->bs->locate_handle_buffer(
+			search_by_protocol,
+			&gEfiSimpleFileSystemProtocolGuid,
+			NULL,&size,&hands
+		);
+		if(size>0&&hands)device=hands[0];
+		if(!device)xerror("no file system found");
 	}else device=file->loaded.device_handle;
 	if(!file->device_path&&!(file->device_path=efi_device_path_from_file_str8(
 		file->pool,device,file->path
