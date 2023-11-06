@@ -42,16 +42,19 @@ efi_status efi_update_size(
 	void*buf;
 	efi_status st;
 	fb_cfg*cfg=NULL;
+	int prot,flags;
 	size_t new_size,cs=0,i;
 	if(!ni)return efi_invalid_parameter;
 	new_size=ni->width*ni->height*sizeof(efi_graphics_output_blt_pixel);
 	if(info->buffer&&new_size==info->size)buf=info->buffer;
 	else if(!buffer){
 		if(info->buffer&&!info->reallocate)return efi_unsupported;
-		buf=mmap(
-			NULL,new_size,PROT_READ|PROT_WRITE,
-			MAP_PRIVATE|MAP_32BIT|MAP_ANONYMOUS,-1,0
-		);
+		prot=PROT_READ|PROT_WRITE;
+		flags=MAP_PRIVATE|MAP_ANONYMOUS;
+		#ifdef MAP_32BIT
+		flags|=MAP_32BIT;
+		#endif
+		buf=mmap(NULL,new_size,prot,flags,-1,0);
 		if(!buf||buf==MAP_FAILED)return efi_out_of_resources;
 		if(info->buffer)munmap(info->buffer,info->size);
 		memset(buf,0,info->size);
