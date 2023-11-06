@@ -4,6 +4,8 @@
 
 #ifndef EFI_WRAPPER_H
 #define EFI_WRAPPER_H
+#include<signal.h>
+#include<ucontext.h>
 #include"efi/efi_context.h"
 #include"efi/device_path.h"
 #include"efi/protocols/graphics_output.h"
@@ -106,4 +108,11 @@ extern efi_status efi_new_simple_text_output_from_posix_fd(
 	efi_handle*handle,
 	efi_simple_text_output_protocol**proto
 );
+extern bool proc_fake_ins(int sig,siginfo_t*info,ucontext_t*uc);
+extern void signal_hand(int sig,siginfo_t*info,void*d);
+extern void efi_install_sig_handler(efi_file*file,bool uninstall);
+struct efi_wrapper_code{
+	uint64_t base;
+	list*phdr;
+};
 #endif

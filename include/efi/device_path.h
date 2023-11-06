@@ -6,6 +6,7 @@
 #define EFI_WRAPPER_DEVICE_PATH_H
 #include"mem.h"
 #include"efi_types.h"
+#include"efi_file.h"
 #include"protocols/device_path.h"
 extern uint8_t efi_device_path_get_type(const void*node);
 extern uint8_t efi_device_path_get_sub_type(const void*node);

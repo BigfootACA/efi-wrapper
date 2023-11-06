@@ -7,9 +7,7 @@
 #include<sys/wait.h>
 #include"efi/efi_file.h"
 #include"efi/efi_string.h"
-#include"efi/device_path.h"
-
-extern void signal_hand(int sig,siginfo_t*info,void*d);
+#include"efi/efi_wrapper.h"
 
 static efi_status efi_entry_invoke(
 	efi_file*file,
@@ -25,6 +23,24 @@ static efi_status efi_entry_invoke(
 	return file->st;
 }
 
+void efi_install_sig_handler(efi_file*file,bool uninstall){
+	int sig[]={
+		SIGQUIT,SIGTRAP,SIGXCPU,SIGXFSZ,SIGABRT,
+		SIGSYS,SIGSEGV,SIGILL,SIGBUS,SIGFPE,0
+	};
+	if(!file)return;
+	if(!file->sa_init){
+		file->sa_init=true;
+		sigemptyset(&file->sa.sa_mask);
+		file->sa.sa_sigaction=&signal_hand;
+		file->sa.sa_flags=SA_SIGINFO|SA_ONSTACK;
+	}
+	for(size_t i=0;sig[i];i++){
+		if(uninstall)sigaction(sig[i],&file->old[i],NULL);
+		else sigaction(sig[i],&file->sa,&file->old[i]);
+	}
+}
+
 efi_status efi_run_with(
 	efi_file*file,
 	bool fork_run,
@@ -34,11 +50,6 @@ efi_status efi_run_with(
 	pid_t p;
 	efi_run_context*ctx;
 	efi_status st=efi_success;
-	struct sigaction sa,old[10];
-	int sig[]={
-		SIGQUIT,SIGTRAP,SIGXCPU,SIGXFSZ,SIGABRT,
-		SIGSYS,SIGSEGV,SIGILL,SIGBUS,SIGFPE,0
-	};
 	int fds[2]={-1,-1},rt=0;
 	if(!file)return efi_invalid_parameter;
 	if(!file->entry){
@@ -57,12 +68,9 @@ efi_status efi_run_with(
 	xlog(LOG_INFO,"Invoke efi entry point 0x%zx with (0x%zx, 0x%zx)...",
 		(size_t)file->entry,(size_t)handle,(size_t)table);
 	if(!fork_run){
-		sigemptyset(&sa.sa_mask);
-		sa.sa_sigaction=&signal_hand;
-		sa.sa_flags=SA_SIGINFO|SA_RESETHAND;
-		for(size_t i=0;sig[i];i++)sigaction(sig[i],&sa,&old[i]);
+		efi_install_sig_handler(file,false);
 		st=efi_entry_invoke(file,handle,table);
-		for(size_t i=0;sig[i];i++)sigaction(sig[i],&old[i],NULL);
+		efi_install_sig_handler(file,true);
 	}else switch((p=fork())){
 		case -1:
 			xerror("fork failed: %m");

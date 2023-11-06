@@ -4,6 +4,7 @@
 #include<stddef.h>
 #include<stdbool.h>
 #include<setjmp.h>
+#include<signal.h>
 #include"../pe.h"
 #include"efi_spec.h"
 #include"efi_context.h"
@@ -38,6 +39,8 @@ typedef struct efi_file{
 	mem_pool*pool;
 	void*image;
 	size_t image_size;
+	bool sa_init;
+	struct sigaction sa,old[25];
 	#ifdef ELF_FOUND
         Elf*elf_dbg;
         int elf_dbg_fd;

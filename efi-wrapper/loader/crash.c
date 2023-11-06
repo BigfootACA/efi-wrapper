@@ -4,9 +4,11 @@
 
 #include<signal.h>
 #include<unistd.h>
+#include<udisasm.h>
 #include"defines.h"
 #include"efi/efi_file.h"
 #include"efi/efi_string.h"
+#include"efi/efi_wrapper.h"
 #ifdef __GLIBC__
 #include<execinfo.h>
 #define BACKTRACE_SIZE 16
@@ -95,13 +97,36 @@ static void dump_address_status(size_t addr){
 	}else xerror("Address not in any sections");
 }
 
+static void print_disasm(void*ptr){
+	char buf[128];
+	uint32_t val=0;
+	uint64_t off=(uint64_t)ptr;
+	xerror("Fatal code (disassemble)");
+	memset(buf,0,sizeof(buf));
+	if(efi_running_lookup_ptr(off)){
+		disasm(off,buf);
+		memcpy(&val,(void*)off,4);
+	}else strcpy(buf,"[BAD MEMORY]");
+	if(!buf[0])strcpy(buf,"[UNKNOWN OPCODE]");
+	xerror(
+		"  0x%lx: <%08x>  %s",
+		off,val,buf
+	);
+}
+
 void signal_hand(int sig,siginfo_t*info,void*d){
 	efi_memory_type type;
+	void*do_disasm=NULL;
 	static bool catch=false;
-	(void)d;
+	ucontext_t*uc=d;
 	if(catch){
 		xerror("force quit while loop crash");
 		_exit(-1);
+	}
+	catch=true;
+	if(proc_fake_ins(sig,info,uc)){
+		catch=false;
+		return;
 	}
 	restore_terminal();
 	log_call_level=0;
@@ -118,9 +143,14 @@ void signal_hand(int sig,siginfo_t*info,void*d){
 			xerror("Syscall number: %d (0x%04x)",info->si_syscall,info->si_syscall);
 			xerror("Syscall arch: %s (0x%04x)",audit_arch_to_string(info->si_arch,"Unknown"),info->si_arch);
 			dump_address_status((size_t)info->si_call_addr);
-
 		break;
-		case SIGSEGV:case SIGILL:case SIGBUS:case SIGFPE:
+		case SIGFPE:case SIGILL:case SIGBUS:
+			do_disasm=info->si_addr;//fallthrough
+		case SIGSEGV:
+			#if defined(__aarch64__)
+			if(uc->uc_mcontext.pc)
+				do_disasm=(void*)uc->uc_mcontext.pc;
+			#endif
 			xerror("Fault address: 0x%012zx",(size_t)info->si_addr);
 			dump_address_status((size_t)info->si_addr);
 		break;
@@ -138,6 +168,8 @@ void signal_hand(int sig,siginfo_t*info,void*d){
 	);
 	xerror("Stack backtrace:");
 	stack_backtrace(LOG_ERROR,3);
+	efi_install_sig_handler(efi_running_get(),true);
+	if(do_disasm)print_disasm(do_disasm);
 	xerror("Creating core dump...");
 	raise(sig);
 }

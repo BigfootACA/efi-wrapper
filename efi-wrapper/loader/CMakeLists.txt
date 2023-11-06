@@ -10,4 +10,8 @@ add_library(
 	execute.c
 	symbol.c
 	crash.c
-	running.c image.c)
+	running.c
+	image.c
+	fake_ins.c
+	fake_ins_aarch64.c
+)

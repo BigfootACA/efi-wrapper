@@ -48,6 +48,7 @@ struct efi_context_mem{
 };
 struct efi_run_context{
 	list*handles;
+	void*fake_reg;
 	efi_context_mem mem[efi_max_memory_type];
 	efi_system_table*st;
 	efi_boot_services*bs;
