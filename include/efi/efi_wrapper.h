@@ -4,11 +4,13 @@
 
 #ifndef EFI_WRAPPER_H
 #define EFI_WRAPPER_H
+#include<elf.h>
 #include<signal.h>
 #include<ucontext.h>
 #include"efi/efi_context.h"
 #include"efi/device_path.h"
 #include"efi/protocols/graphics_output.h"
+#include"list.h"
 #include"defines.h"
 extern efi_status efi_get_protocol(
 	efi_handle handle,
@@ -115,4 +117,5 @@ struct efi_wrapper_code{
 	uint64_t base;
 	list*phdr;
 };
+extern list*efi_wrapper_code_self;
 #endif

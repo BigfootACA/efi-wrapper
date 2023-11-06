@@ -1,4 +1,5 @@
 #include"internal.h"
+#include<link.h>
 
 efiapi efi_status efi_allocate_pages_impl(
 	efi_allocate_type type,
@@ -65,8 +66,10 @@ efiapi efi_status efi_get_memory_map_impl(
 		call_arg(ptr,desc_ver),
 		NULL
 	);
+	list*l0,*l1;
 	size_t size=0;
 	efi_memory_type type;
+	efi_memory_descriptor item;
 	if(key)*key=0;
 	if(desc_ver)*desc_ver=1;
 	if(desc_size){
@@ -78,6 +81,14 @@ efiapi efi_status efi_get_memory_map_impl(
 		log_return(efi_invalid_parameter);
 	for(type=efi_reserved_memory_type;type<efi_max_memory_type;type++)
 		if(efi_current_ctx->mem[type].pool)size+=*desc_size;
+	if((l0=list_first(efi_wrapper_code_self)))do{
+		LIST_DATA_DECLARE(code,l0,struct efi_wrapper_code*);
+		if(code&&(l1=list_first(code->phdr)))do{
+			LIST_DATA_DECLARE(phdr,l1,ElfW(Phdr)*);
+			if(!phdr||phdr->p_type!=PT_LOAD)continue;
+			size+=*desc_size;
+		}while((l1=l1->next));
+	}while((l0=l0->next));
 	if(size>*map_size){
 		*map_size=size;
 		log_return(efi_buffer_too_small);
@@ -90,6 +101,30 @@ efiapi efi_status efi_get_memory_map_impl(
 		memcpy(map,&efi_current_ctx->mem[type].map,sizeof(efi_memory_descriptor));
 		map=(void*)map+*desc_size;
 	}
+	if((l0=list_first(efi_wrapper_code_self)))do{
+		LIST_DATA_DECLARE(code,l0,struct efi_wrapper_code*);
+		if(code&&(l1=list_first(code->phdr)))do{
+			LIST_DATA_DECLARE(phdr,l1,ElfW(Phdr)*);
+			if(!phdr||phdr->p_type!=PT_LOAD)continue;
+			uint64_t m_start=code->base+phdr->p_vaddr;
+			uint64_t m_base=round_down(m_start,PAGE_SIZE),m_off=m_base-m_start;
+			uint64_t m_size=round_up(phdr->p_memsz+m_off,PAGE_SIZE);
+			memset(&item,0,sizeof(item));
+			item.physical_start.uintn=m_start;
+			item.virtual_start.uintn=m_start;
+			item.pages=m_size/PAGE_SIZE;
+			bool r=(phdr->p_flags&PF_R)==PF_R;
+			bool w=(phdr->p_flags&PF_W)==PF_W;
+			bool x=(phdr->p_flags&PF_X)==PF_X;
+			item.attribute=EFI_MEMORY_WB;
+			item.type=x?efi_bs_code:efi_bs_data;
+			if(r&&!w)item.attribute|=EFI_MEMORY_RO;
+			if(!r)item.attribute|=EFI_MEMORY_RP;
+			if(!x)item.attribute|=EFI_MEMORY_XP;
+			memcpy(map,&item,sizeof(efi_memory_descriptor));
+			map=(void*)map+*desc_size;
+		}while((l1=l1->next));
+	}while((l0=l0->next));
 	log_return(efi_success);
 }
 

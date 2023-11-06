@@ -1,3 +1,5 @@
+#include<elf.h>
+#include<link.h>
 #include<unistd.h>
 #include<getopt.h>
 #include<signal.h>
@@ -5,6 +7,7 @@
 #include<sys/ioctl.h>
 #include"defines.h"
 #include"logger.h"
+#include"list.h"
 #include"efi/efi_file.h"
 #include"efi/efi_context.h"
 #include"efi/efi_wrapper.h"
@@ -14,6 +17,7 @@
 struct winsize ws_size;
 static struct termios old;
 static bool need_restore=false;
+list*efi_wrapper_code_self=NULL;
 
 static int usage(){
 	puts(
@@ -69,6 +73,23 @@ static void add_fs(efi_run_context*ctx,list*root){
 	}while((l=l->next));
 }
 
+static int fill_self_data(
+	struct dl_phdr_info*info,
+	size_t size cdecl_attr_unused,
+	void*data cdecl_attr_unused
+){
+	size_t s=sizeof(struct efi_wrapper_code);
+	struct efi_wrapper_code*code=malloc(s);
+	if(!code)return -1;
+	memset(code,0,s);
+	list_obj_add_new(NULL,&efi_wrapper_code_self,code);
+	code->base=info->dlpi_addr;
+	for(ElfW(Half) i=0;i<info->dlpi_phnum;i++)list_obj_add_new_dup(
+		NULL,&code->phdr,(void*)&info->dlpi_phdr[i],sizeof(ElfW(Phdr))
+	);
+	return 0;
+}
+
 int main(int argc,char**argv){
 	int o;
 	efi_file*f=NULL;
@@ -89,6 +110,7 @@ int main(int argc,char**argv){
 		{"help",       no_argument,       NULL, 'h'},
 		{NULL,0,NULL,0}
 	};
+	dl_iterate_phdr(fill_self_data,NULL);
 	xlog_set_verbose(false);
 	xlog_set_print_call_stack(false);
 	xlog_set_type(LOG_CALL,false);
