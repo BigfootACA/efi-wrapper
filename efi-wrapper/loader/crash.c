@@ -114,6 +114,8 @@ static void print_disasm(void*ptr){
 	);
 }
 
+void crash_break(void){}
+
 void signal_hand(int sig,siginfo_t*info,void*d){
 	efi_memory_type type;
 	void*do_disasm=NULL;
@@ -170,6 +172,7 @@ void signal_hand(int sig,siginfo_t*info,void*d){
 	stack_backtrace(LOG_ERROR,3);
 	efi_install_sig_handler(efi_running_get(),true);
 	if(do_disasm)print_disasm(do_disasm);
+	crash_break();
 	xerror("Creating core dump...");
 	raise(sig);
 }
