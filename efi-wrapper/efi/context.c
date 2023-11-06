@@ -36,8 +36,10 @@ static efi_status init_pool(
 	efi_memory_type type,
 	size_t length
 ){
+	void*ptr;
 	char buff[64];
 	efi_status st;
+	int prot,flags;
 	if(!ctx||type>=efi_max_memory_type)
 		return efi_invalid_parameter;
 	efi_context_mem*mem=&ctx->mem[type];
@@ -47,17 +49,19 @@ static efi_status init_pool(
 		xerror("create memory pool failed");
 		EDONE(st=efi_out_of_resources);
 	}
-	if(!(mem->pointer=mmap(
-		NULL,mem->size,
-		PROT_READ|PROT_WRITE|PROT_EXEC,
-		MAP_PRIVATE|MAP_32BIT|MAP_ANONYMOUS,-1,0
-	))||mem->pointer==MAP_FAILED){
+	prot=PROT_READ|PROT_WRITE|PROT_EXEC;
+	flags=MAP_PRIVATE|MAP_ANONYMOUS;
+	#ifdef MAP_32BIT
+	flags|=MAP_32BIT;
+	#endif
+	if(!(ptr=mmap(NULL,mem->size,prot,flags,-1,0))||ptr==MAP_FAILED){
 		xerror(
 			"allocate %zu bytes memory region failed: %s",
 			mem->size,strerror(errno)
 		);
 		EDONE(st=efi_out_of_resources);
 	}
+	mem->pointer=ptr;
 	if(!(mem->tlsf_ctl=tlsf_create(mem->pointer))){
 		xerror("create tlsf memory pool failed");
 		EDONE(st=efi_out_of_resources);
