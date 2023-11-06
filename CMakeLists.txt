@@ -1,10 +1,8 @@
 cmake_minimum_required(VERSION 3.24)
 project(efi_wrapper C)
 add_definitions(-Werror=stack-usage=12288 -Wno-pointer-to-int-cast -Wno-int-to-pointer-cast)
-if("${CMAKE_C_COMPILER_ID}" STREQUAL "GNU" AND UNIX)
-	add_definitions("-rdynamic -fstack-protector-all -fshort-wchar")
-endif()
-add_definitions(-Wno-unused-function)
+add_definitions(-Wno-unused-function -fshort-wchar -D_GNU_SOURCE)
+list(APPEND DEFAULT_C_FLAGS "-rdynamic" "-fstack-protector-all")
 set(CMAKE_C_STANDARD 11)
 find_package(PkgConfig REQUIRED)
 include_directories(include ${CMAKE_CURRENT_BINARY_DIR})
@@ -18,9 +16,9 @@ if(ENABLE_WERROR)
 	add_definitions(-Wall -Wextra -Werror)
 endif()
 if("${ENABLE_ASAN}" STREQUAL "ON")
-	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} \
-		-fsanitize=address -fsanitize=undefined -fsanitize=leak \
-		-fsanitize-recover=all -fno-omit-frame-pointer -fsanitize=leak"
+	list(APPEND DEFAULT_C_FLAGS
+		"-fsanitize=address" "-fsanitize=undefined" "-fsanitize=leak"
+		"-fsanitize-recover=all" "-fno-omit-frame-pointer" "-fsanitize=leak"
 	)
 endif()
 if(ENABLE_SDL2 STREQUAL "AUTO")
@@ -57,7 +55,10 @@ if(VNCSERVER_FOUND)
 endif()
 configure_file(config.h.in "${CMAKE_CURRENT_BINARY_DIR}/config.h")
 add_subdirectory(lib)
-add_executable(efi_wrapper efi-wrapper/main.c include/efi/efi_wrapper.h)
+
+add_executable(efi_wrapper efi-wrapper/main.c)
+target_compile_options(efi_wrapper PRIVATE ${DEFAULT_C_FLAGS})
+target_link_options(efi_wrapper PRIVATE ${DEFAULT_C_FLAGS})
 target_link_libraries(efi_wrapper -Wl,--start-group -Wl,--whole-archive)
 add_subdirectory(efi-wrapper)
 target_link_libraries(efi_wrapper global_lib)
