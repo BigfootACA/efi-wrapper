@@ -2,7 +2,6 @@
 // Created by bigfoot on 2023/5/8.
 //
 
-#define _GNU_SOURCE
 #include"internal.h"
 #include"path.h"
 #include<fcntl.h>
