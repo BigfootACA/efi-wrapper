@@ -98,6 +98,10 @@ int main(int argc,char**argv){
 				fprintf(stderr,"open %s failed: %m\n",optarg);
 		break;
 		case 's':
+			#ifndef SDL2_FOUND
+			fprintf(stderr,"sdl2 not enabled\n");
+			return 1;
+			#endif
 			if((svc=efi_service_lookup_service(
 				&gEfiWrapperSDL2GraphicsOutputProtocolGuid
 			)))svc->disabled=false;

@@ -722,8 +722,12 @@ static efi_status svc_condition(
 	if(efi_service_is_svc_started(ctx,&gEfiGraphicsOutputProtocolGuid))
 		return efi_already_started;
 	#if defined(__linux__)
-	if(!getenv("DISPLAY")&&!getenv("WAYLAND_DISPLAY"))
+	if(!getenv("DISPLAY")&&!getenv("WAYLAND_DISPLAY")){
+		static bool warn=false;
+		if(!warn)xlog(LOG_ERROR,"no available display for sdl2");
+		warn=true;
 		return efi_not_ready;
+	}
 	#endif
 	return efi_success;
 }
