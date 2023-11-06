@@ -100,13 +100,13 @@ efiapi efi_status efi_locate_handle_impl(
 		if(efi_valid_handle(hand)&&cmp(l,arg))cnt++;
 	}while((l=l->next));
 	if(cnt<=0)log_return(efi_not_found);
-	size=(cnt+1)*sizeof(efi_handle);
+	size=cnt*sizeof(efi_handle);
 	if(*length<size){
 		*length=size;
 		log_return(efi_buffer_too_small);
 	}
 	if(!buffer)log_return(efi_invalid_parameter);
-	memset(buffer,0,size);
+	memset(buffer,0,*length);
 	*length=size;
 	xlog(LOG_CALL,"found %zu match handles",cnt);
 	if((l=list_first(efi_current_ctx->handles)))do{
@@ -167,6 +167,6 @@ efiapi efi_status efi_locate_handle_buffer_impl(
         if(!*buffer)log_return(efi_out_of_resources);
         st=efi_locate_handle_impl(type,protocol,key,&size,*buffer);
         if(efi_error(st))log_return(st);
-        *handles=(size/sizeof(efi_handle))-1;
+        *handles=(size/sizeof(efi_handle));
 	log_return(efi_success);
 }
