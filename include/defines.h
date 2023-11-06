@@ -71,6 +71,7 @@
 #define cdecl_attr_constructor cdecl_attr(constructor)
 #define cdecl_attr_printf(fmt,va) cdecl_attr(format(printf,fmt,va))
 #define header_func static inline cdecl_attr_unused
+#define weak_func cdecl_attr(__weak__)
 typedef int runnable_t(void*);
 header_func size_t s_strlcpy(char *buf,const char*src,size_t len){
         char*d0=buf;
